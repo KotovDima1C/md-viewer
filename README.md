@@ -1,5 +1,7 @@
 # MD Viewer
 
+<img src="docs/icon.png" width="96" alt="Иконка MD Viewer">
+
 Лёгкий просмотрщик Markdown для Windows: двойной клик по `.md` открывает окно с оформленным текстом. Программа только показывает файл и ничего в нём не меняет.
 
 ## Что умеет
@@ -55,6 +57,7 @@ powershell -ExecutionPolicy Bypass -File .\uninstall.ps1
 
 - `src/MainForm.cs` — окно, рендер, навигация, автообновление.
 - `src/style.css` — оформление страницы (встроено в exe).
+- `src/app.ico` — иконка: белый лист и плашка `.md` с ягодным градиентом (малиновый → фиолетовый). Рисует её `tools/make_icon.py` (`py tools/make_icon.py`, нужен Pillow); для 16–24 px там упрощённая версия без надписи.
 - Настройки окна и кэш движка лежат в `%LOCALAPPDATA%\md-viewer\`.
 
 ## Идеи на потом

@@ -17,7 +17,8 @@
     <TieredPGO>true</TieredPGO>
     <SatelliteResourceLanguages>ru;en</SatelliteResourceLanguages>
     <Product>MD Viewer</Product>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
+    <ApplicationIcon>app.ico</ApplicationIcon>
     <!-- WebView2 тянет WPF-сборку, которая нам не нужна: конфликт версий WindowsBase безвреден -->
     <NoWarn>$(NoWarn);MSB3277</NoWarn>
   </PropertyGroup>
@@ -29,6 +30,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="style.css" LogicalName="style.css" />
+    <EmbeddedResource Include="app.ico" LogicalName="app.ico" />
   </ItemGroup>
 
 </Project>

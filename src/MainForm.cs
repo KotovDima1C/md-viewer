@@ -53,6 +53,8 @@ sealed class MainForm : Form
         firstRender = Task.Run(() => BuildPage(file));
 
         Text = Title(file);
+        using (var ico = typeof(MainForm).Assembly.GetManifestResourceStream("app.ico"))
+            if (ico != null) Icon = new Icon(ico); // все размеры: заголовок, панель задач, Alt+Tab
         AutoScaleMode = AutoScaleMode.Dpi;
         StartPosition = FormStartPosition.WindowsDefaultLocation;
         LoadBounds();

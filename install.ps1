@@ -26,6 +26,7 @@ Set-Key "$cls\$progId\shell\open\command" "`"$exe`" `"%1`""
 Set-Key "$cls\Applications\md-viewer.exe" $null
 Set-ItemProperty "$cls\Applications\md-viewer.exe" -Name FriendlyAppName -Value 'MD Viewer'
 Set-Key "$cls\Applications\md-viewer.exe\shell\open\command" "`"$exe`" `"%1`""
+Set-Key "$cls\Applications\md-viewer.exe\DefaultIcon" "`"$exe`",0"
 Set-Key "$cls\Applications\md-viewer.exe\SupportedTypes" $null
 
 foreach ($ext in $exts) {
