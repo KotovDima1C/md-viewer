@@ -240,11 +240,55 @@
     });
   }
 
+  // ---------- Широкие таблицы ----------
+  // Каждая таблица — в обёртке с прокруткой; содержимое ячеек — в .cell с потолком ширины
+  // (у таблиц max-width на самих ячейках не работает). Если таблице с такими колонками тесно
+  // в колонке текста — обёртка раскрывается на всю ширину окна; там браузер сам сузит колонки
+  // до допустимого минимума, а дальше включится прокрутка.
+  var tableWraps = [];
+  document.querySelectorAll('.markdown-body table').forEach(function (t) {
+    t.querySelectorAll('th, td').forEach(function (c) {
+      var inner = document.createElement('div');
+      var text = c.textContent.trim();
+      inner.className = text.length > 40 ? 'cell cell-long' : 'cell';
+      // Число (в том числе «1 240», «3 972,7», «-5%») — без переноса и по правому краю, как в отчётах
+      if (c.tagName === 'TD' && /^[-+−]?[\d\s  ]+([.,]\d+)?\s?%?$/.test(text) && /\d/.test(text)) c.classList.add('num');
+      while (c.firstChild) inner.appendChild(c.firstChild);
+      c.appendChild(inner);
+    });
+    var wrap = document.createElement('div');
+    wrap.className = 'table-wrap';
+    t.parentNode.insertBefore(wrap, t);
+    wrap.appendChild(t);
+    tableWraps.push(wrap);
+  });
+  var layoutTables = function () {
+    var article = document.querySelector('.markdown-body');
+    if (!article) return;
+    var column = article.clientWidth;
+    tableWraps.forEach(function (w) {
+      var t = w.firstChild;
+      t.style.width = 'max-content';           // естественная ширина с учётом потолков колонок
+      var natural = t.offsetWidth;
+      t.style.width = '';
+      w.classList.toggle('table-wide', natural > column + 1);
+      w.classList.toggle('table-compact', natural < column / 2); // совсем узкую не растягиваем — пустота посередине
+    });  };
+  if (tableWraps.length) {
+    layoutTables();
+    var tablesPending = false;
+    window.addEventListener('resize', function () {
+      if (tablesPending) return;
+      tablesPending = true;
+      requestAnimationFrame(function () { tablesPending = false; layoutTables(); });
+    });
+  }
+
   // ---------- Оглавление и переключатель темы поверх широкой схемы — полупрозрачные ----------
   var overlapPending = false;
   var checkOverlap = function () {
     overlapPending = false;
-    var boxes = document.querySelectorAll('.mermaid-box:not(.mermaid-error)');
+    var boxes = document.querySelectorAll('.mermaid-box:not(.mermaid-error), .table-wrap.table-wide');
     [document.querySelector('.theme-toggle'), document.querySelector('.toc')].forEach(function (f) {
       if (!f) return;
       var r = f.getBoundingClientRect(), over = false;
@@ -256,7 +300,7 @@
     });
   };
   var scheduleOverlap = function () {
-    if (overlapPending || !document.querySelector('.mermaid-box')) return;
+    if (overlapPending || !document.querySelector('.mermaid-box, .table-wrap.table-wide')) return;
     overlapPending = true;
     requestAnimationFrame(checkOverlap);
   };

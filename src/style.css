@@ -145,8 +145,22 @@ kbd {
   background: var(--soft);
 }
 
-table { border-collapse: collapse; display: block; width: max-content; max-width: 100%; overflow: auto; }
-th, td { padding: 6px 13px; border: 1px solid var(--border); }
+/* Таблицы. Помещается в колонку текста — остаётся в ней; шире — блок на всю ширину окна (как схемы).
+   Колонки: потолок ширины зависит от ширины экрана (длинный текст переносится), нижняя граница —
+   самое длинное слово, а у колонок с длинным текстом ещё и 9em. Дальше сужать некуда — прокрутка. */
+.table-wrap { margin: 0 0 16px; overflow-x: auto; }
+.table-wrap.table-wide {
+  position: relative; width: calc(100vw - 120px); left: 50%; transform: translateX(-50%);
+}
+.table-wrap.table-wide table { margin: 0 auto; }
+/* уже колонки текста — растянуть на всю её ширину; уже половины колонки — оставить своей ширины */
+.table-wrap:not(.table-wide):not(.table-compact) > table { width: 100%; }
+table { border-collapse: collapse; }
+.table-wrap > table { margin-bottom: 0; }
+th, td { padding: 6px 13px; border: 1px solid var(--border); vertical-align: top; }
+.cell { max-width: clamp(220px, 26vw, 520px); overflow-wrap: break-word; }
+.cell-long { min-width: 9em; }
+td.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 th { font-weight: 600; background: var(--soft); }
 tr:nth-child(2n) td { background: color-mix(in srgb, var(--soft) 60%, transparent); }
 
@@ -237,6 +251,8 @@ h1, h2, h3 { scroll-margin-top: 16px; }
 @media print {
   .toc, .mmd-tools { display: none; }
   .mermaid-box { width: auto; left: 0; transform: none; }
+  .table-wrap.table-wide { width: auto; left: 0; transform: none; }
+  .table-wrap { overflow: visible; }
   .mmd-scroll { overflow: visible; }
   .theme-toggle { display: none; }
   body { padding: 0; }
