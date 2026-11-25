@@ -35,7 +35,11 @@ C# / .NET 9, WinForms, WebView2 (движок Edge, уже есть в Windows 1
 
 Для сборки нужен .NET SDK 9. Для запуска нужен .NET Desktop Runtime 9; он входит в SDK.
 
-## Установка и удаление
+## Скачать
+
+Готовая сборка — на странице [Releases](https://github.com/KotovDima1C/md-viewer/releases/latest): архив `md-viewer-<версия>-win-x64.zip`. .NET уже внутри, ставить ничего не нужно. Распакуйте и запустите `setup.cmd`; удаление — `uninstall.cmd`.
+
+## Установка из исходников и удаление
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\install.ps1
@@ -59,6 +63,8 @@ powershell -ExecutionPolicy Bypass -File .\uninstall.ps1
 - `src/MainForm.cs` — окно, рендер, навигация, автообновление.
 - `src/style.css` — оформление страницы, `src/page.js` — переключатель темы и оглавление (оба встроены в exe).
 - `src/app.ico` — иконка: белый лист и плашка `.md` с ягодным градиентом (малиновый → фиолетовый). Рисует её `tools/make_icon.py` (`py tools/make_icon.py`, нужен Pillow); для 16–24 px там упрощённая версия без надписи.
+- `setup.ps1` — копирует готовые файлы в `%LOCALAPPDATA%\Programs\md-viewer` и привязывает `.md`; `install.ps1` собирает из исходников и вызывает его.
+- `release.ps1` — собирает архив релиза в `dist/` (самодостаточная сборка, ~46 МБ). Текст README для архива — `docs/release-readme.txt`.
 - Настройки окна и кэш движка лежат в `%LOCALAPPDATA%\md-viewer\`.
 
 ## Идеи на потом
