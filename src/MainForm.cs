@@ -28,7 +28,13 @@ sealed class MainForm : Form
         .UseYamlFrontMatter()      // не показывать служебный блок --- … --- в начале файла
         .Build();
 
-    static readonly Lazy<string> Css = new(() => Resource("style.css"));
+    static readonly Lazy<string> Css = new(() => Resource("highlight.css") + "\n" + Resource("style.css")); // наши стили последними — они главнее
+
+    // highlight.js (~300 КБ с грамматикой 1С) отдаётся отдельным файлом и грузится,
+    // только если в документе есть блок кода с указанным языком
+    const string AssetPrefix = Origin + "__md-viewer/";
+    const string HighlightUrl = AssetPrefix + "highlight.js?v=11.12.0";
+    static readonly Lazy<byte[]> HighlightJs = new(() => Encoding.UTF8.GetBytes(Resource("highlight.js")));
 
     static string Resource(string name)
     {
@@ -140,6 +146,16 @@ sealed class MainForm : Form
 
     CoreWebView2WebResourceResponse Serve(CoreWebView2Environment env, string url)
     {
+        // Встроенные файлы программы (библиотека подсветки)
+        if (url.StartsWith(AssetPrefix, StringComparison.Ordinal))
+        {
+            var name = new Uri(url).AbsolutePath[(AssetPrefix.Length - Origin.Length + 1)..];
+            return name == "highlight.js"
+                ? env.CreateWebResourceResponse(new MemoryStream(HighlightJs.Value), 200, "OK",
+                    "Content-Type: text/javascript; charset=utf-8\r\nCache-Control: max-age=31536000, immutable")
+                : env.CreateWebResourceResponse(null, 404, "Not Found", "");
+        }
+
         var path = UrlToPath(url);
         if (path == null || !File.Exists(path))
             return Html(env, 404, Page("Файл не найден", $"<p>Нет файла <code>{WebUtility.HtmlEncode(path ?? url)}</code></p>"));
@@ -182,6 +198,8 @@ sealed class MainForm : Form
         $"<meta http-equiv=\"Content-Security-Policy\" content=\"script-src 'nonce-{Nonce}'; object-src 'none'; base-uri 'none'\">" +
         $"<title>{WebUtility.HtmlEncode(title)}</title><style>{Css.Value}</style></head>" +
         $"<body>{ThemeToggle}<article class=\"markdown-body\">{body}</article>" +
+        (body.Contains("<code class=\"language-", StringComparison.Ordinal)
+            ? $"<script nonce=\"{Nonce}\" src=\"{HighlightUrl}\"></script>" : "") +
         $"<script nonce=\"{Nonce}\">{ThemeScript}</script></body></html>";
 
     // Переключатель темы — как на kotov.top: 🌙 тёмная, ☀️ светлая, ⚙️ как в системе

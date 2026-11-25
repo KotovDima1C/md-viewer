@@ -82,6 +82,29 @@ pre {
   border: 1px solid var(--border);
 }
 pre code { padding: 0; background: none; font-size: 1em; white-space: pre; }
+pre { tab-size: 4; }
+
+/* 1С — как в Конфигураторе: имена синие, ключевые слова и знаки красные,
+   строки и числа чёрные, комментарии зелёные, директивы и препроцессор коричневые */
+pre.code-1c {
+  --c1-ident: #0000ff; --c1-kw: #ff0000; --c1-str: #000000;
+  --c1-comment: #008000; --c1-meta: #963200;
+}
+@media (prefers-color-scheme: dark) {
+  pre.code-1c {
+    --c1-ident: #7cb7ff; --c1-kw: #ff6b6b; --c1-str: #e6edf3;
+    --c1-comment: #6cc070; --c1-meta: #e0a060;
+  }
+}
+pre.code-1c code, pre.code-1c code [class^="hljs-title"], pre.code-1c .hljs-params,
+pre.code-1c .hljs-built_in, pre.code-1c .hljs-variable, pre.code-1c .hljs-type,
+pre.code-1c .hljs-function, pre.code-1c .hljs-symbol { color: var(--c1-ident); font-weight: normal; }
+pre.code-1c .hljs-keyword, pre.code-1c .hljs-literal, pre.code-1c .op { color: var(--c1-kw); }
+pre.code-1c .hljs-string, pre.code-1c .hljs-number, pre.code-1c .hljs-string .hljs-subst { color: var(--c1-str); }
+pre.code-1c .hljs-comment { color: var(--c1-comment); font-style: normal; }
+pre.code-1c .hljs-meta, pre.code-1c .hljs-meta * { color: var(--c1-meta); }
+/* highlight.js красит только текст: фон и отступы — наши, как у блока без подсветки */
+pre code.hljs { padding: 0; background: transparent; overflow: visible; display: inline; }
 kbd {
   padding: 2px 5px;
   border: 1px solid var(--border);

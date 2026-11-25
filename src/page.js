@@ -11,6 +11,57 @@
     });
   });
 
+  // ---------- Подсветка синтаксиса (highlight.js подключается, только если есть код с языком) ----------
+  if (window.hljs) {
+    // Частые названия языков из .md, которых нет в highlight.js как псевдонимов
+    hljs.registerAliases(['bsl', 'os', '1с', 'onec'], { languageName: '1c' });
+    hljs.registerAliases(['ps', 'ps1', 'pwsh'], { languageName: 'powershell' });
+    hljs.registerAliases(['bat', 'cmd'], { languageName: 'dos' });
+    hljs.configure({ ignoreUnescapedHTML: true });
+    document.querySelectorAll('pre code[class*="language-"]').forEach(function (el) {
+      var m = /language-(\S+)/.exec(el.className);
+      var lang = m && hljs.getLanguage(m[1]);
+      if (!lang) return; // неизвестный язык — оставить как есть
+      try {
+        hljs.highlightElement(el);
+        if (/^1C/i.test(lang.name || '')) { // 1С — раскраска как в Конфигураторе
+          el.parentNode.classList.add('code-1c');
+          mark1c(el);
+        }
+      } catch (e) { }
+    });
+  }
+
+  // Доразметка 1С поверх highlight.js: слова объявлений — ключевые, знаки и скобки — операторы
+  // (в Конфигураторе и те и другие красные). Строки, комментарии и директивы не трогаем.
+  function mark1c(code) {
+    var L = '0-9A-Za-zА-Яа-яЁё_';
+    var re = new RegExp('(^|[^' + L + '])(Процедура|Функция|КонецПроцедуры|КонецФункции|Экспорт|Перем|Знач|Асинх|Ждать)(?![' + L + '])' +
+      '|([=+\\-*/<>;(),.?\\[\\]%:])', 'gi');
+    var walker = document.createTreeWalker(code, NodeFilter.SHOW_TEXT), nodes = [];
+    while (walker.nextNode()) {
+      var n = walker.currentNode;
+      if (n.parentNode.closest('.hljs-string, .hljs-comment, .hljs-meta, .hljs-keyword, .hljs-number')) continue;
+      re.lastIndex = 0;
+      if (re.test(n.nodeValue)) nodes.push(n);
+    }
+    nodes.forEach(function (n) {
+      var s = n.nodeValue, frag = document.createDocumentFragment(), last = 0, m;
+      re.lastIndex = 0;
+      while ((m = re.exec(s))) {
+        var word = m[2] || m[3], start = m.index + (m[2] ? m[1].length : 0);
+        frag.appendChild(document.createTextNode(s.slice(last, start)));
+        var span = document.createElement('span');
+        span.className = m[2] ? 'hljs-keyword' : 'op';
+        span.textContent = word;
+        frag.appendChild(span);
+        last = start + word.length;
+      }
+      frag.appendChild(document.createTextNode(s.slice(last)));
+      n.parentNode.replaceChild(frag, n);
+    });
+  }
+
   // ---------- Оглавление: полоски слева, при наведении — список ----------
   var heads = Array.prototype.filter.call(
     document.querySelectorAll('.markdown-body h1, .markdown-body h2, .markdown-body h3'),
