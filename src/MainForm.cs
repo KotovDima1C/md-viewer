@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Net;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 using Markdig;
 using Microsoft.Web.WebView2.Core;
@@ -11,7 +13,8 @@ namespace MdViewer;
 /// Окно просмотра. Markdown рендерится в HTML через Markdig и отдаётся встроенному
 /// движку Edge (WebView2) с виртуального адреса https://md.local/&lt;абсолютный путь&gt;,
 /// поэтому относительные картинки и ссылки на соседние .md работают как в браузере.
-/// JavaScript в странице выключен: чужой .md не сможет ничего выполнить.
+/// Скрипты из .md заблокированы политикой CSP: выполняется только наш переключатель темы
+/// (он помечен случайным nonce, который чужой файл узнать не может).
 /// </summary>
 sealed class MainForm : Form
 {
@@ -39,7 +42,9 @@ sealed class MainForm : Form
     // иначе Esc, Ctrl+W и прочие уходят в страницу и до окна не доходят.
     CoreWebView2Controller? ctl;
     CoreWebView2? Core => ctl?.CoreWebView2;
-    readonly Color bg;
+    // Тема: system / light / dark. Хранится в %LOCALAPPDATA%\md-viewer	heme.txt
+    static volatile string themeMode = LoadThemeMode();
+    static readonly string Nonce = Convert.ToBase64String(RandomNumberGenerator.GetBytes(18));
     readonly System.Windows.Forms.Timer reloadTimer = new() { Interval = 150 };
     readonly Task<string> firstRender;
     readonly string firstFile;
@@ -59,8 +64,7 @@ sealed class MainForm : Form
         StartPosition = FormStartPosition.WindowsDefaultLocation;
         LoadBounds();
 
-        bg = IsDarkTheme() ? Color.FromArgb(13, 17, 23) : Color.White;
-        BackColor = bg; // без белой вспышки в тёмной теме
+        BackColor = BgColor(); // без белой вспышки в тёмной теме
 
         reloadTimer.Tick += (_, _) => { reloadTimer.Stop(); Core?.Reload(); };
         FormClosing += (_, _) => SaveBounds();
@@ -72,6 +76,10 @@ sealed class MainForm : Form
             ctl.Bounds = ClientRectangle;
         };
         Activated += (_, _) => ctl?.MoveFocus(CoreWebView2MoveFocusReason.Programmatic);
+        HandleCreated += (_, _) => ApplyTitleBar();
+        // Системная тема Windows поменялась — подстроиться, если выбран режим «как в системе»
+        SystemEvents.UserPreferenceChanged += OnSystemPreferenceChanged;
+        FormClosed += (_, _) => SystemEvents.UserPreferenceChanged -= OnSystemPreferenceChanged;
 
         _ = InitAsync();
     }
@@ -91,7 +99,7 @@ sealed class MainForm : Form
             return;
         }
 
-        ctl.DefaultBackgroundColor = bg;
+        ctl.DefaultBackgroundColor = BgColor();
         ctl.Bounds = ClientRectangle;
         ctl.AcceleratorKeyPressed += (_, e) =>
         {
@@ -105,9 +113,10 @@ sealed class MainForm : Form
         ctl.MoveFocus(CoreWebView2MoveFocusReason.Programmatic);
 
         var core = ctl.CoreWebView2;
-        core.Settings.IsScriptEnabled = false;
+        core.Settings.IsScriptEnabled = true;      // нужен только переключателю темы, остальное режет CSP
         core.Settings.AreDevToolsEnabled = false;
-        core.Settings.IsWebMessageEnabled = false;
+        core.Settings.IsWebMessageEnabled = true;  // переключатель сообщает выбранную тему
+        core.Profile.PreferredColorScheme = SchemeFor(themeMode);
         core.Settings.AreHostObjectsAllowed = false;
         core.Settings.IsStatusBarEnabled = true; // адрес ссылки при наведении
 
@@ -116,6 +125,11 @@ sealed class MainForm : Form
         core.NavigationStarting += OnNavigationStarting;
         core.NewWindowRequested += (_, e) => { e.Handled = true; OpenOutside(e.Uri); };
         core.SourceChanged += (_, _) => OnPageChanged(core.Source);
+        core.WebMessageReceived += (_, e) =>
+        {
+            if (!e.Source.StartsWith(Origin, StringComparison.Ordinal)) return;
+            try { SetTheme(e.TryGetWebMessageAsString()); } catch { }
+        };
 
         core.Navigate(PathToUrl(firstFile));
     }
@@ -162,10 +176,24 @@ sealed class MainForm : Form
     }
 
     static string Page(string title, string body) =>
-        "<!doctype html><html lang=\"ru\"><head><meta charset=\"utf-8\">" +
-        "<meta http-equiv=\"Content-Security-Policy\" content=\"script-src 'none'; object-src 'none'\">" +
+        $"<!doctype html><html lang=\"ru\" data-theme-mode=\"{themeMode}\"><head><meta charset=\"utf-8\">" +
+        $"<meta http-equiv=\"Content-Security-Policy\" content=\"script-src 'nonce-{Nonce}'; object-src 'none'; base-uri 'none'\">" +
         $"<title>{WebUtility.HtmlEncode(title)}</title><style>{Css.Value}</style></head>" +
-        $"<body><article class=\"markdown-body\">{body}</article></body></html>";
+        $"<body>{ThemeToggle}<article class=\"markdown-body\">{body}</article>" +
+        $"<script nonce=\"{Nonce}\">{ThemeScript}</script></body></html>";
+
+    // Переключатель темы — как на kotov.top: 🌙 тёмная, ☀️ светлая, ⚙️ как в системе
+    const string ThemeToggle =
+        "<div class=\"theme-toggle\" role=\"group\" aria-label=\"Тема\">" +
+        "<button type=\"button\" data-mode=\"dark\" title=\"Тёмная тема\">🌙</button>" +
+        "<button type=\"button\" data-mode=\"light\" title=\"Светлая тема\">☀️</button>" +
+        "<button type=\"button\" data-mode=\"system\" title=\"Как в Windows\">⚙️</button></div>";
+
+    const string ThemeScript =
+        "document.querySelectorAll('.theme-toggle button').forEach(function(b){" +
+        "b.addEventListener('click',function(){var m=b.dataset.mode;" +
+        "document.documentElement.setAttribute('data-theme-mode',m);" +
+        "chrome.webview.postMessage(m);});});";
 
     static byte[] ReadShared(string path)
     {
@@ -335,6 +363,77 @@ sealed class MainForm : Form
     };
 
     static string Title(string path) => Path.GetFileName(path) + " — MD Viewer";
+
+    // ---------- тема ----------
+
+    static string ThemeFile => Path.Combine(AppDataDir, "theme.txt");
+
+    static string LoadThemeMode()
+    {
+        try
+        {
+            var m = File.ReadAllText(ThemeFile).Trim();
+            if (m is "system" or "light" or "dark") return m;
+        }
+        catch { }
+        return "system";
+    }
+
+    static CoreWebView2PreferredColorScheme SchemeFor(string mode) => mode switch
+    {
+        "light" => CoreWebView2PreferredColorScheme.Light,
+        "dark" => CoreWebView2PreferredColorScheme.Dark,
+        _ => CoreWebView2PreferredColorScheme.Auto,
+    };
+
+    static bool EffectiveDark() => themeMode switch
+    {
+        "dark" => true,
+        "light" => false,
+        _ => IsDarkTheme(),
+    };
+
+    static Color BgColor() => EffectiveDark() ? Color.FromArgb(13, 17, 23) : Color.White;
+
+    void SetTheme(string mode)
+    {
+        if (mode is not ("system" or "light" or "dark") || mode == themeMode) return;
+        themeMode = mode;
+        if (Core != null) Core.Profile.PreferredColorScheme = SchemeFor(mode); // страница перекрашивается сразу
+        ApplyColors();
+        try { Directory.CreateDirectory(AppDataDir); File.WriteAllText(ThemeFile, mode); } catch { }
+    }
+
+    void ApplyColors()
+    {
+        var c = BgColor();
+        BackColor = c;
+        if (ctl != null) ctl.DefaultBackgroundColor = c;
+        ApplyTitleBar();
+    }
+
+    void OnSystemPreferenceChanged(object? sender, UserPreferenceChangedEventArgs e)
+    {
+        if (themeMode != "system" || e.Category != UserPreferenceCategory.General) return;
+        if (IsHandleCreated) BeginInvoke(ApplyColors);
+    }
+
+    // Тёмный заголовок окна (Windows 10 20H1+ / 11)
+    [DllImport("dwmapi.dll")]
+    static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
+
+    void ApplyTitleBar()
+    {
+        if (!IsHandleCreated) return;
+        int on = EffectiveDark() ? 1 : 0;
+        if (DwmSetWindowAttribute(Handle, 20, ref on, sizeof(int)) != 0)
+            DwmSetWindowAttribute(Handle, 19, ref on, sizeof(int)); // старые сборки Windows 10
+        // Перерисовать рамку сразу, а не при следующей активации окна
+        SetWindowPos(Handle, IntPtr.Zero, 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0004 | 0x0010 | 0x0020);
+    }
+
+    [DllImport("user32.dll")]
+    static extern bool SetWindowPos(IntPtr hWnd, IntPtr after, int x, int y, int cx, int cy, uint flags);
 
     // ---------- окно ----------
 
