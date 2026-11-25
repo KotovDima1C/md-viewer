@@ -28,12 +28,14 @@ sealed class MainForm : Form
         .UseYamlFrontMatter()      // не показывать служебный блок --- … --- в начале файла
         .Build();
 
-    static readonly Lazy<string> Css = new(() =>
+    static readonly Lazy<string> Css = new(() => Resource("style.css"));
+
+    static string Resource(string name)
     {
-        using var s = typeof(MainForm).Assembly.GetManifestResourceStream("style.css")!;
+        using var s = typeof(MainForm).Assembly.GetManifestResourceStream(name)!;
         using var r = new StreamReader(s);
         return r.ReadToEnd();
-    });
+    }
 
     static readonly string AppDataDir =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "md-viewer");
@@ -42,7 +44,7 @@ sealed class MainForm : Form
     // иначе Esc, Ctrl+W и прочие уходят в страницу и до окна не доходят.
     CoreWebView2Controller? ctl;
     CoreWebView2? Core => ctl?.CoreWebView2;
-    // Тема: system / light / dark. Хранится в %LOCALAPPDATA%\md-viewer	heme.txt
+    // Тема: system / light / dark. Хранится в %LOCALAPPDATA%\md-viewer\theme.txt
     static volatile string themeMode = LoadThemeMode();
     static readonly string Nonce = Convert.ToBase64String(RandomNumberGenerator.GetBytes(18));
     readonly System.Windows.Forms.Timer reloadTimer = new() { Interval = 150 };
@@ -189,11 +191,9 @@ sealed class MainForm : Form
         "<button type=\"button\" data-mode=\"light\" title=\"Светлая тема\">☀️</button>" +
         "<button type=\"button\" data-mode=\"system\" title=\"Как в Windows\">⚙️</button></div>";
 
-    const string ThemeScript =
-        "document.querySelectorAll('.theme-toggle button').forEach(function(b){" +
-        "b.addEventListener('click',function(){var m=b.dataset.mode;" +
-        "document.documentElement.setAttribute('data-theme-mode',m);" +
-        "chrome.webview.postMessage(m);});});";
+    // Скрипт страницы (тема + оглавление) — встроенный ресурс page.js
+    static readonly Lazy<string> ThemeScriptLazy = new(() => Resource("page.js"));
+    static string ThemeScript => ThemeScriptLazy.Value;
 
     static byte[] ReadShared(string path)
     {
