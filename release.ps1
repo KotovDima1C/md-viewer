@@ -15,10 +15,11 @@ if (Test-Path $zip)   { [IO.File]::Delete($zip) }
 dotnet publish $proj -c Release -r win-x64 --self-contained true -o (Join-Path $stage 'app') --nologo
 if ($LASTEXITCODE -ne 0) { throw 'Build failed' }
 
-foreach ($f in 'setup.ps1', 'setup.cmd', 'uninstall.ps1', 'uninstall.cmd') {
+foreach ($f in 'setup.ps1', 'setup.cmd', 'uninstall.ps1', 'uninstall.cmd', 'THIRD-PARTY-NOTICES.txt') {
     Copy-Item (Join-Path $PSScriptRoot $f) $stage
 }
 Copy-Item (Join-Path $PSScriptRoot 'docs\release-readme.txt') (Join-Path $stage 'README.txt')
+Copy-Item (Join-Path $PSScriptRoot 'LICENSE') (Join-Path $stage 'LICENSE.txt')
 
 Compress-Archive -Path $stage -DestinationPath $zip -CompressionLevel Optimal
 $size = [math]::Round((Get-Item $zip).Length / 1MB, 1)

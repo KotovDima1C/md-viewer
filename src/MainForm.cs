@@ -30,11 +30,24 @@ sealed class MainForm : Form
 
     static readonly Lazy<string> Css = new(() => Resource("highlight.css") + "\n" + Resource("style.css")); // наши стили последними — они главнее
 
-    // highlight.js (~300 КБ с грамматикой 1С) отдаётся отдельным файлом и грузится,
-    // только если в документе есть блок кода с указанным языком
+    // Большие библиотеки отдаются отдельными файлами и грузятся, только когда нужны:
+    // highlight.js (~300 КБ) — если есть код с указанным языком, mermaid (~3,5 МБ) — если есть диаграмма
     const string AssetPrefix = Origin + "__md-viewer/";
     const string HighlightUrl = AssetPrefix + "highlight.js?v=11.12.0";
-    static readonly Lazy<byte[]> HighlightJs = new(() => Encoding.UTF8.GetBytes(Resource("highlight.js")));
+    const string MermaidUrl = AssetPrefix + "mermaid.js?v=11.17.2";
+    static readonly Dictionary<string, Lazy<byte[]>> Assets = new()
+    {
+        ["highlight.js"] = new(() => ResourceBytes("highlight.js")),
+        ["mermaid.js"] = new(() => ResourceBytes("mermaid.js")),
+    };
+
+    static byte[] ResourceBytes(string name)
+    {
+        using var s = typeof(MainForm).Assembly.GetManifestResourceStream(name)!;
+        using var ms = new MemoryStream();
+        s.CopyTo(ms);
+        return ms.ToArray();
+    }
 
     static string Resource(string name)
     {
@@ -136,7 +149,13 @@ sealed class MainForm : Form
         core.WebMessageReceived += (_, e) =>
         {
             if (!e.Source.StartsWith(Origin, StringComparison.Ordinal)) return;
-            try { SetTheme(e.TryGetWebMessageAsString()); } catch { }
+            try
+            {
+                var msg = e.TryGetWebMessageAsString();
+                if (msg.StartsWith("error:", StringComparison.Ordinal)) LogError(currentFile, msg[6..]);
+                else SetTheme(msg);
+            }
+            catch { }
         };
 
         core.Navigate(PathToUrl(firstFile));
@@ -150,8 +169,8 @@ sealed class MainForm : Form
         if (url.StartsWith(AssetPrefix, StringComparison.Ordinal))
         {
             var name = new Uri(url).AbsolutePath[(AssetPrefix.Length - Origin.Length + 1)..];
-            return name == "highlight.js"
-                ? env.CreateWebResourceResponse(new MemoryStream(HighlightJs.Value), 200, "OK",
+            return Assets.TryGetValue(name, out var asset)
+                ? env.CreateWebResourceResponse(new MemoryStream(asset.Value), 200, "OK",
                     "Content-Type: text/javascript; charset=utf-8\r\nCache-Control: max-age=31536000, immutable")
                 : env.CreateWebResourceResponse(null, 404, "Not Found", "");
         }
@@ -200,6 +219,8 @@ sealed class MainForm : Form
         $"<body>{ThemeToggle}<article class=\"markdown-body\">{body}</article>" +
         (body.Contains("<code class=\"language-", StringComparison.Ordinal)
             ? $"<script nonce=\"{Nonce}\" src=\"{HighlightUrl}\"></script>" : "") +
+        (body.Contains("class=\"mermaid\"", StringComparison.Ordinal) || body.Contains("class=\"language-mermaid\"", StringComparison.Ordinal)
+            ? $"<script nonce=\"{Nonce}\" src=\"{MermaidUrl}\"></script>" : "") +
         $"<script nonce=\"{Nonce}\">{ThemeScript}</script></body></html>";
 
     // Переключатель темы — как на kotov.top: 🌙 тёмная, ☀️ светлая, ⚙️ как в системе
@@ -381,6 +402,21 @@ sealed class MainForm : Form
     };
 
     static string Title(string path) => Path.GetFileName(path) + " — MD Viewer";
+
+    // ---------- журнал ошибок страницы ----------
+
+    static void LogError(string file, string message)
+    {
+        try
+        {
+            var log = Path.Combine(AppDataDir, "errors.log");
+            Directory.CreateDirectory(AppDataDir);
+            if (File.Exists(log) && new FileInfo(log).Length > 256 * 1024) File.Delete(log); // не разрастаться
+            if (message.Length > 2000) message = message[..2000];
+            File.AppendAllText(log, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}  {Path.GetFileName(file)}  {message}{Environment.NewLine}");
+        }
+        catch { }
+    }
 
     // ---------- тема ----------
 

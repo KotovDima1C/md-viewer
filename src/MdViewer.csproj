@@ -17,11 +17,17 @@
     <TieredPGO>true</TieredPGO>
     <SatelliteResourceLanguages>ru;en</SatelliteResourceLanguages>
     <Product>MD Viewer</Product>
-    <Version>0.5.0</Version>
+    <Version>0.6.0</Version>
     <ApplicationIcon>app.ico</ApplicationIcon>
     <!-- WebView2 тянет WPF-сборку, которая нам не нужна: конфликт версий WindowsBase безвреден -->
     <NoWarn>$(NoWarn);MSB3277</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Лицензии кладутся рядом с exe: и в установленную программу, и в архив релиза -->
+    <None Include="..\LICENSE" Link="LICENSE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="..\THIRD-PARTY-NOTICES.txt" Link="THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Markdig" Version="0.38.0" />
@@ -34,6 +40,7 @@
     <EmbeddedResource Include="page.js" LogicalName="page.js" />
     <EmbeddedResource Include="vendor\highlight.js" LogicalName="highlight.js" />
     <EmbeddedResource Include="vendor\highlight.css" LogicalName="highlight.css" />
+    <EmbeddedResource Include="vendor\mermaid.js" LogicalName="mermaid.js" />
   </ItemGroup>
 
 </Project>

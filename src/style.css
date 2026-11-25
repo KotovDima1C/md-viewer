@@ -84,6 +84,38 @@ pre {
 pre code { padding: 0; background: none; font-size: 1em; white-space: pre; }
 pre { tab-size: 4; }
 
+/* Диаграммы Mermaid: натуральный размер, блок шире колонки текста — на всю ширину окна */
+.mermaid-box {
+  position: relative; margin: 0 0 16px;
+  width: calc(100vw - 120px); left: 50%; transform: translateX(-50%);
+}
+.mmd-scroll {
+  display: flex; justify-content: safe center; /* влезает — по центру, нет — прокрутка с начала */
+  overflow-x: auto; overflow-y: hidden; padding: 4px 0 8px;
+}
+.mmd-scroll svg { flex: none; max-width: none; }
+.mermaid-box.mmd-wide .mmd-scroll { cursor: grab; }
+.mermaid-box.mmd-dragging .mmd-scroll { cursor: grabbing; user-select: none; }
+.mmd-tools {
+  position: absolute; top: 0; left: 0; z-index: 2; display: flex; gap: 2px; padding: 3px;
+  border-radius: 8px; background: var(--soft); border: 1px solid var(--border);
+  opacity: 0; transition: opacity .15s ease;
+}
+.mermaid-box:hover .mmd-tools, .mmd-tools:focus-within { opacity: 1; }
+.mmd-tools button {
+  min-width: 28px; height: 24px; padding: 0 6px; border: 0; border-radius: 5px; cursor: pointer;
+  background: transparent; color: var(--fg); font: 600 13px/1 "Segoe UI", sans-serif;
+}
+.mmd-tools button:hover { background: color-mix(in srgb, var(--fg) 10%, transparent); }
+.mmd-tools .mmd-pct { min-width: 46px; font-weight: 500; color: var(--muted); }
+.mermaid-box.mermaid-error { width: auto; left: 0; transform: none; }
+.mermaid-error {
+  text-align: left; padding: 10px 14px; border-radius: 8px; font-size: 0.9em;
+  color: #cf222e; border: 1px solid color-mix(in srgb, #cf222e 50%, transparent);
+  background: color-mix(in srgb, #cf222e 8%, transparent);
+}
+.mermaid-error pre { margin: 8px 0 0; color: var(--fg); }
+
 /* 1С — как в Конфигураторе: имена синие, ключевые слова и знаки красные,
    строки и числа чёрные, комментарии зелёные, директивы и препроцессор коричневые */
 pre.code-1c {
@@ -125,13 +157,17 @@ details summary { cursor: pointer; }
 
 /* Переключатель темы: 🌙 ☀️ ⚙️, кружок переезжает к выбранному */
 .theme-toggle {
-  position: fixed; top: 12px; right: 18px; z-index: 10;
+  /* на широком экране — сразу справа от колонки текста, в узком окне — у края */
+  position: fixed; top: 24px; right: max(18px, calc(50% - 430px - 124px)); z-index: 10;
   width: 96px; height: 32px; padding: 0 4px; border-radius: 20px;
   display: flex; align-items: center; justify-content: space-between;
   background: var(--soft); border: 1px solid var(--border);
   opacity: .55; transition: opacity .2s ease;
 }
 .theme-toggle:hover, .theme-toggle:focus-within { opacity: 1; }
+/* поверх широкой схемы — почти прозрачные, чтобы не закрывать её */
+.theme-toggle.over-diagram { opacity: .25; }
+.theme-toggle.over-diagram:hover, .theme-toggle.over-diagram:focus-within { opacity: 1; }
 .theme-toggle::after {
   content: ""; position: absolute; top: 50%; left: 4px; pointer-events: none;
   width: 24px; height: 24px; border-radius: 50%;
@@ -154,7 +190,9 @@ details summary { cursor: pointer; }
 .theme-toggle button:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
 
 /* Оглавление: полоски слева, активная подсвечена; при наведении — карточка со списком */
-.toc { position: fixed; left: 10px; top: 64px; z-index: 9; }
+/* на широком экране — сразу слева от колонки текста, в узком окне — у края */
+.toc { position: fixed; left: max(10px, calc(50% - 430px - 66px)); top: 64px; z-index: 9; }
+.toc.over-diagram .toc-rail { opacity: .35; }
 .toc-rail {
   display: flex; flex-direction: column; gap: 9px;
   padding: 10px 8px; max-height: calc(100vh - 128px); overflow: hidden; cursor: pointer;
@@ -197,7 +235,9 @@ details summary { cursor: pointer; }
 h1, h2, h3 { scroll-margin-top: 16px; }
 
 @media print {
-  .toc { display: none; }
+  .toc, .mmd-tools { display: none; }
+  .mermaid-box { width: auto; left: 0; transform: none; }
+  .mmd-scroll { overflow: visible; }
   .theme-toggle { display: none; }
   body { padding: 0; }
   pre { white-space: pre-wrap; }
