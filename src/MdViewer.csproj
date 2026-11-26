@@ -9,7 +9,6 @@
     <AssemblyName>md-viewer</AssemblyName>
     <RootNamespace>MdViewer</RootNamespace>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
-    <InvariantGlobalization>true</InvariantGlobalization>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>false</SelfContained>
     <!-- Быстрый холодный старт: код заранее скомпилирован в машинный -->
@@ -17,7 +16,7 @@
     <TieredPGO>true</TieredPGO>
     <SatelliteResourceLanguages>ru;en</SatelliteResourceLanguages>
     <Product>MD Viewer</Product>
-    <Version>0.6.1</Version>
+    <Version>0.6.2</Version>
     <ApplicationIcon>app.ico</ApplicationIcon>
     <!-- WebView2 тянет WPF-сборку, которая нам не нужна: конфликт версий WindowsBase безвреден -->
     <NoWarn>$(NoWarn);MSB3277</NoWarn>

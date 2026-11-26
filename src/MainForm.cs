@@ -405,7 +405,7 @@ sealed class MainForm : Form
 
     // ---------- журнал ошибок страницы ----------
 
-    static void LogError(string file, string message)
+    internal static void LogError(string file, string message)
     {
         try
         {
