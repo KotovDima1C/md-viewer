@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MD Viewer — просмотрщик Markdown с подсветкой кода 1С</title>
+<meta name="description" content="Лёгкий просмотрщик .md для Windows: код 1С в цветах Конфигуратора, схемы Mermaid, таблицы, оглавление. Открывается за доли секунды. Бесплатно, с открытым кодом.">
+<meta property="og:title" content="MD Viewer — Markdown, в котором код 1С выглядит как в Конфигураторе">
+<meta property="og:description" content="Двойной клик по .md — и через полсекунды документ открыт: код раскрашен, таблицы и схемы на месте.">
+<meta property="og:image" content="https://kotovdima1c.github.io/md-viewer/screenshots/code-1c-light.png">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Unbounded:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1c1e24;
+    --ink-soft: #4a4f5c;
+    --paper: #ffffff;
+    --mist: #f3f4f7;
+    --line: #dfe2e8;
+    --berry-a: #e11d48;
+    --berry-b: #9333ea;
+    /* цвета Конфигуратора — только в коде */
+    --c1-kw: #e00000;
+    --c1-id: #0000ff;
+    --c1-str: #000000;
+    --c1-com: #008000;
+    --c1-meta: #963200;
+    --c1-dim: #9aa0aa;
+    --measure: 62ch;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; color: var(--ink); background: var(--paper);
+    font: 400 18px/1.6 "Golos Text", "Segoe UI", system-ui, sans-serif;
+  }
+  a { color: inherit; }
+  :focus-visible { outline: 3px solid var(--berry-b); outline-offset: 3px; border-radius: 4px; }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 0 32px; }
+
+  h1, h2 { font-family: "Unbounded", "Segoe UI", sans-serif; font-weight: 700; letter-spacing: -0.01em; margin: 0; }
+  h1 { font-size: clamp(30px, 3.2vw, 46px); line-height: 1.1; overflow-wrap: break-word; hyphens: auto; }
+  h2 { font-size: clamp(26px, 2.8vw, 36px); line-height: 1.15; }
+  p { margin: 0; }
+
+  /* ---------- шапка ---------- */
+  .top { display: flex; align-items: center; justify-content: space-between; padding-block: 22px; }
+  .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; font-weight: 600; }
+  .brand img { width: 36px; height: 36px; }
+  .top nav { display: flex; gap: 24px; font-size: 16px; }
+  .top nav a { text-decoration: none; color: var(--ink-soft); }
+  .top nav a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
+
+  /* ---------- первый экран ---------- */
+  .hero { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 7fr); gap: 56px; align-items: center; padding-block: 48px 88px; }
+  .hero .lead { font-size: 20px; color: var(--ink-soft); margin-top: 22px; max-width: 40ch; }
+  .cta { margin-top: 34px; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+  .download {
+    display: inline-flex; align-items: center; gap: 12px;
+    padding: 17px 28px 17px 24px; border-radius: 14px; text-decoration: none;
+    color: #fff; font-weight: 600; font-size: 19px;
+    background: linear-gradient(120deg, var(--berry-a), var(--berry-b));
+    box-shadow: 0 10px 28px -12px rgba(147, 51, 234, .55);
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .download:hover { transform: translateY(-1px); box-shadow: 0 14px 32px -12px rgba(147, 51, 234, .7); }
+  .download:active { transform: none; }
+  .download svg { flex: none; }
+  .cta small { font-size: 15px; color: var(--ink-soft); }
+  .cta small a { color: var(--ink-soft); }
+
+  /* окно с кодом 1С — главный элемент страницы */
+  .window {
+    border: 1px solid var(--line); border-radius: 12px; background: #fff; overflow: hidden;
+    box-shadow: 0 30px 60px -30px rgba(28, 30, 36, .28), 0 2px 6px rgba(28, 30, 36, .05);
+  }
+  .window-bar {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+    font-size: 13px; color: var(--ink-soft); border-bottom: 1px solid var(--line); background: #fafbfc;
+  }
+  .window-bar img { width: 16px; height: 16px; }
+  .window-body { padding: 22px 26px 26px; }
+  .window-body h3 { font: 600 20px/1.3 "Golos Text", sans-serif; margin: 0 0 14px; }
+  pre.code {
+    margin: 0; padding: 16px 18px; border-radius: 8px; background: #f6f8fa; border: 1px solid #e4e7ec;
+    font: 400 13.5px/1.62 "JetBrains Mono", Consolas, monospace; tab-size: 4; overflow-x: auto;
+    color: var(--c1-dim);
+  }
+  pre.code span { transition: color .45s ease; }
+  pre.code .ln.lit .k { color: var(--c1-kw); }
+  pre.code .ln.lit .i { color: var(--c1-id); }
+  pre.code .ln.lit .s { color: var(--c1-str); }
+  pre.code .ln.lit .c { color: var(--c1-com); }
+  pre.code .ln.lit .m { color: var(--c1-meta); }
+  pre.code .ln.lit { color: var(--c1-str); }
+  .ln { display: block; }
+
+  /* ---------- секции ---------- */
+  section { padding-block: 96px; }
+  section.mist { background: var(--mist); }
+  .section-head { max-width: var(--measure); }
+  .section-head p { margin-top: 18px; color: var(--ink-soft); }
+
+  /* цвета Конфигуратора: легенда — это и есть содержание */
+  .legend { list-style: none; padding: 0; margin: 40px 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 22px 40px; max-width: 980px; }
+  .legend li { display: grid; grid-template-columns: 14px 1fr; gap: 6px 14px; align-items: baseline; }
+  .legend .sw { width: 14px; height: 14px; border-radius: 3px; transform: translateY(2px); }
+  .legend b { font-weight: 600; }
+  .legend code { grid-column: 2; font: 400 14px/1.5 "JetBrains Mono", monospace; }
+  .legend .tip { grid-column: 2; font-size: 16px; color: var(--ink-soft); }
+  .usage { margin-top: 44px; font-size: 17px; color: var(--ink-soft); max-width: var(--measure); }
+  code.inline { font: 500 0.88em "JetBrains Mono", monospace; background: #fff; border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; color: var(--ink); }
+  .mist code.inline { background: #fff; }
+
+  .split { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 56px; align-items: start; }
+  .split .section-head p + p { margin-top: 14px; }
+  figure { margin: 0; }
+  .shot { width: 100%; height: auto; display: block; border-radius: 10px; border: 1px solid var(--line); box-shadow: 0 24px 50px -28px rgba(28, 30, 36, .35); }
+  figcaption { margin-top: 12px; font-size: 15px; color: var(--ink-soft); }
+
+  .speed { display: flex; flex-wrap: wrap; gap: 14px 48px; margin-top: 36px; max-width: 900px; }
+  .speed p { flex: 1 1 240px; color: var(--ink-soft); font-size: 17px; }
+  .speed strong { display: block; color: var(--ink); font-weight: 600; font-size: 18px; margin-bottom: 4px; }
+
+  .more { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px 56px; margin: 44px 0 0; max-width: 980px; }
+  .more dt { font-weight: 600; }
+  .more dd { margin: 6px 0 0; color: var(--ink-soft); font-size: 17px; }
+
+  /* установка — настоящая последовательность, поэтому с номерами */
+  .steps { list-style: none; counter-reset: step; padding: 0; margin: 44px 0 0; max-width: 760px; }
+  .steps li { counter-increment: step; display: grid; grid-template-columns: 52px 1fr; gap: 18px; padding: 22px 0; border-top: 1px solid var(--line); }
+  .steps li:last-child { border-bottom: 1px solid var(--line); }
+  .steps li::before { content: counter(step); font: 700 26px/1 "Unbounded", sans-serif; color: var(--berry-b); padding-top: 3px; }
+  .steps p { color: var(--ink-soft); font-size: 17px; }
+  .steps b { color: var(--ink); font-weight: 600; }
+  .note { margin-top: 26px; max-width: var(--measure); font-size: 16px; color: var(--ink-soft); }
+  .final { margin-top: 44px; }
+
+  footer { padding: 44px 0 56px; border-top: 1px solid var(--line); font-size: 16px; color: var(--ink-soft); }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 14px 40px; align-items: center; justify-content: space-between; }
+  footer nav { display: flex; flex-wrap: wrap; gap: 10px 28px; }
+  footer a { text-decoration: none; }
+  footer a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
+
+  @media (max-width: 960px) {
+    .hero, .split { grid-template-columns: 1fr; gap: 40px; }
+    .hero { padding-block-start: 24px; }
+    .hero .lead { max-width: none; }
+  }
+  @media (max-width: 640px) {
+    body { font-size: 17px; }
+    .wrap { padding: 0 20px; }
+    .top nav { display: none; }
+    section { padding-block: 64px; }
+    .window-body { padding: 16px; }
+    pre.code { font-size: 12px; padding: 12px; }
+    .more { grid-template-columns: 1fr; }
+    .download { width: 100%; justify-content: center; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    pre.code span, .download { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="wrap top">
+  <a class="brand" href="#"><img src="icon.png" alt="" width="36" height="36">MD Viewer</a>
+  <nav aria-label="Разделы">
+    <a href="#code-1c">Код 1С</a>
+    <a href="#diagrams">Схемы и таблицы</a>
+    <a href="#install">Установка</a>
+    <a href="https://github.com/KotovDima1C/md-viewer">GitHub</a>
+  </nav>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <div>
+      <h1>Markdown, в котором код 1С выглядит как в Конфигураторе</h1>
+      <p class="lead">MD Viewer — лёгкий просмотрщик .md для Windows. Двойной клик по файлу — и через полсекунды документ открыт: код раскрашен, таблицы и схемы на месте.</p>
+      <div class="cta">
+        <a class="download js-download" href="https://github.com/KotovDima1C/md-viewer/releases/latest/download/md-viewer-win-x64.zip">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 19h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="js-label">Скачать последнюю версию</span>
+        </a>
+        <small><span class="js-meta">Для Windows 10 и 11, бесплатно</span>, с <a href="https://github.com/KotovDima1C/md-viewer">открытым кодом</a></small>
+      </div>
+    </div>
+
+    <div class="window" role="img" aria-label="Окно MD Viewer: код 1С раскрашен в цвета Конфигуратора">
+      <div class="window-bar"><img src="icon.png" alt="">контроль-остатков.md — MD Viewer</div>
+      <div class="window-body">
+        <h3>Контроль остатков при проведении</h3>
+<pre class="code" id="code"><span class="ln"><span class="m">&amp;НаСервере</span></span><span class="ln"><span class="k">Процедура</span> <span class="i">ОбработкаПроведения</span><span class="k">(</span><span class="i">Отказ</span><span class="k">,</span> <span class="i">РежимПроведения</span><span class="k">)</span></span><span class="ln">&nbsp;</span><span class="ln">	<span class="c">// Нет товара на складе — документ не проводим</span></span><span class="ln">	<span class="i">Выборка</span> <span class="k">=</span> <span class="i">Запрос</span><span class="k">.</span><span class="i">Выполнить</span><span class="k">().</span><span class="i">Выбрать</span><span class="k">();</span></span><span class="ln">	<span class="k">Пока</span> <span class="i">Выборка</span><span class="k">.</span><span class="i">Следующий</span><span class="k">()</span> <span class="k">Цикл</span></span><span class="ln">		<span class="k">Если</span> <span class="i">Выборка</span><span class="k">.</span><span class="i">Остаток</span> <span class="k">&lt;</span> <span class="s">1</span> <span class="k">Тогда</span></span><span class="ln">			<span class="i">Сообщить</span><span class="k">(</span><span class="s">"Нет на складе: "</span> <span class="k">+</span> <span class="i">Выборка</span><span class="k">.</span><span class="i">Номенклатура</span><span class="k">);</span></span><span class="ln">			<span class="i">Отказ</span> <span class="k">=</span> <span class="k">Истина;</span></span><span class="ln">		<span class="k">КонецЕсли;</span></span><span class="ln">	<span class="k">КонецЦикла;</span></span><span class="ln">&nbsp;</span><span class="ln"><span class="k">КонецПроцедуры</span></span></pre>
+      </div>
+    </div>
+  </div>
+
+  <section class="mist" id="code-1c">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Код 1С в привычных цветах</h2>
+        <p>ТЗ, заметки к доработкам, документация в репозиториях, ответы нейросетей — всё это сейчас в Markdown. В обычных просмотрщиках код 1С там серая простыня. MD Viewer раскрашивает его так, как глаз привык видеть в Конфигураторе.</p>
+      </div>
+      <ul class="legend">
+        <li><span class="sw" style="background: var(--c1-kw)"></span><b>Ключевые слова и знаки</b><code style="color: var(--c1-kw)">Если Тогда Процедура = ; (</code></li>
+        <li><span class="sw" style="background: var(--c1-id)"></span><b>Имена</b><code style="color: var(--c1-id)">Выборка Номенклатура Сообщить</code></li>
+        <li><span class="sw" style="background: var(--c1-str)"></span><b>Строки, числа и даты</b><code>"Нет на складе" 1 '20261126'</code></li>
+        <li><span class="sw" style="background: var(--c1-com)"></span><b>Комментарии</b><code style="color: var(--c1-com)">// Нет товара — не проводим</code></li>
+        <li><span class="sw" style="background: var(--c1-meta)"></span><b>Директивы и препроцессор</b><code style="color: var(--c1-meta)">&amp;НаСервере #Область</code></li>
+      </ul>
+      <p class="usage">Достаточно указать язык у блока кода: <code class="inline">```bsl</code>, <code class="inline">```1c</code> или <code class="inline">```1с</code>. В тёмной теме схема та же, только приглушённая. Ещё около 40 языков подсвечиваются в стиле GitHub: SQL, YAML, JSON, XML, C#, Python, PowerShell, bash.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Открыл, прочитал, закрыл</h2>
+        <p>Без вкладок, проектов и регистрации. Просмотрщик только показывает файл и ничего в нём не меняет.</p>
+      </div>
+      <div class="speed">
+        <p><strong>Окно за 0,3 секунды</strong>Документ появляется раньше, чем вы успеете убрать руку с мыши.</p>
+        <p><strong>Тяжёлое — только когда нужно</strong>Подсветка и схемы подключаются лишь к файлам, где они есть. Простая заметка открывается как текстовый файл.</p>
+        <p><strong>Сам обновляется</strong>Сохранили файл в редакторе — страница перерисовалась, прокрутка осталась на месте.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="mist" id="diagrams">
+    <div class="wrap split">
+      <div class="section-head">
+        <h2>Схемы и широкие таблицы — на весь экран</h2>
+        <p>Схемы Mermaid пишутся текстом в блоке <code class="inline">```mermaid</code> и рисуются сразу: блок-схемы, последовательности, Ганта, круговые.</p>
+        <p>Большая схема или таблица на двадцать колонок раскрывается на всю ширину окна, в натуральную величину. Не помещается — прокрутка, перетаскивание мышью и масштаб над схемой.</p>
+      </div>
+      <figure>
+        <img class="shot" src="screenshots/diagram-dark.png" alt="Схема проведения документа и диаграмма последовательности в MD Viewer, тёмная тема" loading="lazy" width="1846" height="993">
+        <figcaption>Схема проведения документа — прямо из текста в .md</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head"><h2>И всё, что нужно для чтения</h2></div>
+      <dl class="more">
+        <div><dt>Оглавление сбоку</dt><dd>Полоски по заголовкам, текущий раздел подсвечивается. Наведите — раскроется список.</dd></div>
+        <div><dt>Три темы</dt><dd>Тёмная, светлая или как в Windows. Выбор запоминается, заголовок окна перекрашивается вместе со страницей.</dd></div>
+        <div><dt>Ссылки между документами</dt><dd>Другие .md открываются в том же окне, назад — Alt+←. Сайты — в браузере.</dd></div>
+        <div><dt>Поиск, масштаб, печать</dt><dd>Ctrl+F, Ctrl+колесо, Ctrl+P в PDF. Esc закрывает окно.</dd></div>
+        <div><dt>Картинки и списки задач</dt><dd>Картинки по относительным путям, сноски, чекбоксы. Служебный YAML в начале файла скрыт.</dd></div>
+        <div><dt>Безопасно</dt><dd>Скрипты из .md не выполняются, даже если в файле они есть.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="mist" id="install">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Установка за минуту</h2>
+        <p>Права администратора не нужны, .NET ставить не нужно — он уже внутри.</p>
+      </div>
+      <ol class="steps">
+        <li><p><b>Скачайте архив и распакуйте его</b> в любую папку.</p></li>
+        <li><p><b>Запустите setup.cmd.</b> Программа установится и станет открывать файлы .md. Обновление — тот же setup.cmd поверх.</p></li>
+        <li><p><b>Если .md по-прежнему открывает другая программа</b> — правый клик по файлу, «Открыть с помощью», «Выбрать другое приложение», MD Viewer, «Всегда».</p></li>
+      </ol>
+      <p class="note">Программа не подписана сертификатом, поэтому Windows может показать «Система Windows защитила ваш компьютер». Нажмите «Подробнее» и «Выполнить в любом случае».</p>
+      <div class="cta final">
+        <a class="download js-download" href="https://github.com/KotovDima1C/md-viewer/releases/latest/download/md-viewer-win-x64.zip">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 19h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="js-label">Скачать последнюю версию</span>
+        </a>
+        <small><a href="https://github.com/KotovDima1C/md-viewer/releases">Все версии и что в них нового</a></small>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>MD Viewer — Дмитрий Котов. Лицензия MIT.</span>
+    <nav aria-label="Ссылки">
+      <a href="https://t.me/top_1c">Telegram-канал «1С Заметки»</a>
+      <a href="https://kotov.top">kotov.top</a>
+      <a href="https://github.com/KotovDima1C/md-viewer">Исходный код</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+  // Код в первом экране «проявляется»: из серого — в цвета Конфигуратора, строка за строкой.
+  (function () {
+    var lines = document.querySelectorAll('#code .ln');
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { lines.forEach(function (l) { l.classList.add('lit'); }); return; }
+    setTimeout(function () {
+      lines.forEach(function (l, i) { setTimeout(function () { l.classList.add('lit'); }, i * 110); });
+    }, 700);
+  })();
+
+  // Номер и размер последней версии — из GitHub. Ссылка на архив работает и без этого.
+  (function () {
+    fetch('https://api.github.com/repos/KotovDima1C/md-viewer/releases/latest')
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (rel) {
+        if (!rel || !rel.tag_name) return;
+        var v = rel.tag_name.replace(/^v/, '');
+        var asset = (rel.assets || []).filter(function (a) { return a.name === 'md-viewer-win-x64.zip'; })[0];
+        document.querySelectorAll('.js-label').forEach(function (el) { el.textContent = 'Скачать MD Viewer ' + v; });
+        if (asset) {
+          var mb = Math.round(asset.size / 1048576);
+          document.querySelectorAll('.js-meta').forEach(function (el) { el.textContent = 'Для Windows 10 и 11, ' + mb + ' МБ, бесплатно'; });
+        }
+      })
+      .catch(function () {});
+  })();
+</script>
+</body>
+</html>

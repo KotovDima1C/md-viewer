@@ -18,7 +18,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/KotovDima1C/md-viewer/releases/latest"><b>⬇ Скачать для Windows</b></a>
+  <a href="https://github.com/KotovDima1C/md-viewer/releases/latest/download/md-viewer-win-x64.zip"><b>⬇ Скачать для Windows</b></a>
+  &nbsp;·&nbsp;
+  <a href="https://kotovdima1c.github.io/md-viewer/">Страница проекта</a>
 </p>
 
 ![Код 1С в MD Viewer — светлая тема, цвета Конфигуратора](docs/screenshots/code-1c-light.png)
@@ -94,7 +96,9 @@
 powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
-Архив релиза — `release.ps1` (самодостаточная сборка в `dist/`).
+Архив релиза — `release.ps1` (самодостаточная сборка в `dist/`). К каждому релизу прикладываются два одинаковых архива: с версией в имени и `md-viewer-win-x64.zip` — на него ведёт постоянная ссылка `releases/latest/download/md-viewer-win-x64.zip`.
+
+Страница проекта — `docs/index.html`, публикуется через GitHub Pages из папки `docs` ветки `main`.
 
 | Где | Что |
 |---|---|

@@ -24,3 +24,11 @@ Copy-Item (Join-Path $PSScriptRoot 'LICENSE') (Join-Path $stage 'LICENSE.txt')
 Compress-Archive -Path $stage -DestinationPath $zip -CompressionLevel Optimal
 $size = [math]::Round((Get-Item $zip).Length / 1MB, 1)
 Write-Host "Release: $zip ($size MB)"
+
+# Copy with a version-less name: attach it to every release too, so that
+# https://github.com/KotovDima1C/md-viewer/releases/latest/download/md-viewer-win-x64.zip
+# (the download button on the landing page) always points to the newest build.
+$latest = Join-Path $dist 'md-viewer-win-x64.zip'
+Copy-Item $zip $latest -Force
+Write-Host "Also attach: $latest"
+Write-Host "  gh release create v$version `"$zip`" `"$latest`" --repo KotovDima1C/md-viewer ..."
