@@ -12,7 +12,7 @@
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Unbounded:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Unbounded:wght@500;700&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --ink: #1c1e24;
@@ -47,15 +47,49 @@
   p { margin: 0; }
 
   /* ---------- шапка ---------- */
-  .top { display: flex; align-items: center; justify-content: space-between; padding-block: 22px; }
+  html { scroll-padding-top: 84px; }
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+  .site-head {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(255, 255, 255, .88); -webkit-backdrop-filter: saturate(1.4) blur(12px); backdrop-filter: saturate(1.4) blur(12px);
+    border-bottom: 1px solid transparent; transition: border-color .2s ease, box-shadow .2s ease;
+  }
+  .site-head.scrolled { border-bottom-color: var(--line); box-shadow: 0 6px 20px -16px rgba(28, 30, 36, .35); }
+  .top { display: flex; align-items: center; justify-content: space-between; padding-block: 18px; }
   .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; font-weight: 600; }
   .brand img { width: 36px; height: 36px; }
-  .top nav { display: flex; gap: 24px; font-size: 16px; }
-  .top nav a { text-decoration: none; color: var(--ink-soft); }
-  .top nav a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
+  .top nav { position: relative; display: flex; gap: 26px; font-size: 16px; }
+  .top nav a { text-decoration: none; color: var(--ink-soft); padding-block: 6px; transition: color .2s ease; }
+  .top nav a:hover, .top nav a.active { color: var(--ink); }
+  /* полоска под пунктом текущего раздела — переезжает при прокрутке */
+  .nav-mark {
+    position: absolute; left: 0; bottom: -2px; height: 2px; width: 0; border-radius: 2px; pointer-events: none;
+    background: linear-gradient(90deg, var(--berry-a), var(--berry-b)); opacity: 0;
+    transition: transform .35s cubic-bezier(.3, .7, .2, 1), width .35s cubic-bezier(.3, .7, .2, 1), opacity .2s ease;
+  }
+
+  /* записка «поставьте звезду» — приклеена к углу окна с кодом */
+  .shot-zone { position: relative; min-width: 0; }
+  .sticker {
+    position: absolute; top: -62px; right: -26px; z-index: 3; width: 206px;
+    padding: 18px 16px 14px; text-decoration: none; color: #4a3d00;
+    background: #fff3b5; border-radius: 3px 3px 14px 3px;
+    box-shadow: 0 14px 26px -14px rgba(90, 70, 0, .45), 0 2px 4px rgba(90, 70, 0, .08);
+    transform: rotate(3.5deg); transition: transform .25s ease, box-shadow .25s ease;
+    font: 600 21px/1.15 "Caveat", "Segoe Print", cursive;
+  }
+  .sticker::before { /* полоска скотча */
+    content: ""; position: absolute; top: -11px; left: 50%; width: 86px; height: 24px; transform: translateX(-50%) rotate(-4deg);
+    background: rgba(255, 255, 255, .55); border: 1px solid rgba(160, 140, 60, .18); border-radius: 2px;
+  }
+  .sticker:hover, .sticker:focus-visible { transform: rotate(0deg) translateY(-3px); box-shadow: 0 20px 30px -14px rgba(90, 70, 0, .5), 0 2px 4px rgba(90, 70, 0, .08); }
+  .sticker b { display: block; font-size: 25px; font-weight: 700; margin-bottom: 4px; }
+  .sticker .star { color: #e0a100; }
+  .sticker .heart { color: var(--berry-a); }
+  .sticker .go { display: block; margin-top: 6px; font-size: 20px; text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
 
   /* ---------- первый экран ---------- */
-  .hero { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 7fr); gap: 56px; align-items: center; padding-block: 48px 88px; }
+  .hero { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 7fr); gap: 56px; align-items: center; padding-block: 72px 88px; }
   .hero .lead { font-size: 20px; color: var(--ink-soft); margin-top: 22px; max-width: 40ch; }
   .cta { margin-top: 34px; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
   .download {
@@ -146,14 +180,16 @@
   footer a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
 
   @media (max-width: 960px) {
-    .hero, .split { grid-template-columns: 1fr; gap: 40px; }
+    .hero, .split { grid-template-columns: minmax(0, 1fr); gap: 40px; }
     .hero { padding-block-start: 24px; }
     .hero .lead { max-width: none; }
+    .sticker { right: 8px; }
   }
   @media (max-width: 640px) {
     body { font-size: 17px; }
     .wrap { padding: 0 20px; }
     .top nav { display: none; }
+    .sticker { position: relative; top: auto; right: auto; display: block; width: auto; max-width: 320px; margin: 30px 0 0 auto; transform: rotate(1.5deg); }
     section { padding-block: 64px; }
     .window-body { padding: 16px; }
     pre.code { font-size: 12px; padding: 12px; }
@@ -167,15 +203,16 @@
 </head>
 <body>
 
-<header class="wrap top">
+<header class="site-head" id="site-head"><div class="wrap top">
   <a class="brand" href="#"><img src="icon.png" alt="" width="36" height="36">MD Viewer</a>
   <nav aria-label="Разделы">
     <a href="#code-1c">Код 1С</a>
     <a href="#diagrams">Схемы и таблицы</a>
     <a href="#install">Установка</a>
     <a href="https://github.com/KotovDima1C/md-viewer">GitHub</a>
+    <span class="nav-mark" aria-hidden="true"></span>
   </nav>
-</header>
+</div></header>
 
 <main>
   <div class="wrap hero">
@@ -191,12 +228,19 @@
       </div>
     </div>
 
+    <div class="shot-zone">
+    <a class="sticker" href="https://github.com/KotovDima1C/md-viewer">
+      <b>Пишете код?</b>
+      Поставьте проекту <span class="star">★</span> на GitHub — так его найдут другие 1С-ники.
+      <span class="go">Поставить звезду <span class="heart">♥</span></span>
+    </a>
     <div class="window" role="img" aria-label="Окно MD Viewer: код 1С раскрашен в цвета Конфигуратора">
       <div class="window-bar"><img src="icon.png" alt="">контроль-остатков.md — MD Viewer</div>
       <div class="window-body">
         <h3>Контроль остатков при проведении</h3>
 <pre class="code" id="code"><span class="ln"><span class="m">&amp;НаСервере</span></span><span class="ln"><span class="k">Процедура</span> <span class="i">ОбработкаПроведения</span><span class="k">(</span><span class="i">Отказ</span><span class="k">,</span> <span class="i">РежимПроведения</span><span class="k">)</span></span><span class="ln">&nbsp;</span><span class="ln">	<span class="c">// Нет товара на складе — документ не проводим</span></span><span class="ln">	<span class="i">Выборка</span> <span class="k">=</span> <span class="i">Запрос</span><span class="k">.</span><span class="i">Выполнить</span><span class="k">().</span><span class="i">Выбрать</span><span class="k">();</span></span><span class="ln">	<span class="k">Пока</span> <span class="i">Выборка</span><span class="k">.</span><span class="i">Следующий</span><span class="k">()</span> <span class="k">Цикл</span></span><span class="ln">		<span class="k">Если</span> <span class="i">Выборка</span><span class="k">.</span><span class="i">Остаток</span> <span class="k">&lt;</span> <span class="s">1</span> <span class="k">Тогда</span></span><span class="ln">			<span class="i">Сообщить</span><span class="k">(</span><span class="s">"Нет на складе: "</span> <span class="k">+</span> <span class="i">Выборка</span><span class="k">.</span><span class="i">Номенклатура</span><span class="k">);</span></span><span class="ln">			<span class="i">Отказ</span> <span class="k">=</span> <span class="k">Истина;</span></span><span class="ln">		<span class="k">КонецЕсли;</span></span><span class="ln">	<span class="k">КонецЦикла;</span></span><span class="ln">&nbsp;</span><span class="ln"><span class="k">КонецПроцедуры</span></span></pre>
       </div>
+    </div>
     </div>
   </div>
 
@@ -302,6 +346,38 @@
     setTimeout(function () {
       lines.forEach(function (l, i) { setTimeout(function () { l.classList.add('lit'); }, i * 110); });
     }, 700);
+  })();
+
+  // Закреплённая шапка: граница при прокрутке и полоска под пунктом текущего раздела.
+  (function () {
+    var head = document.getElementById('site-head');
+    var nav = head.querySelector('nav');
+    var mark = nav.querySelector('.nav-mark');
+    var links = Array.prototype.filter.call(nav.querySelectorAll('a'), function (a) { return a.hash; });
+    var sections = links.map(function (a) { return document.getElementById(a.hash.slice(1)); });
+    var current = null, pending = false;
+    function moveMark(link) {
+      if (link === current) return;
+      if (current) current.classList.remove('active');
+      current = link;
+      if (!link) { mark.style.opacity = '0'; return; }
+      link.classList.add('active');
+      mark.style.width = link.offsetWidth + 'px';
+      mark.style.transform = 'translateX(' + link.offsetLeft + 'px)';
+      mark.style.opacity = '1';
+    }
+    function update() {
+      pending = false;
+      head.classList.toggle('scrolled', window.scrollY > 4);
+      var line = head.offsetHeight + window.innerHeight * 0.25, active = null;
+      sections.forEach(function (sec, i) { if (sec && sec.getBoundingClientRect().top <= line) active = links[i]; });
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) active = links[links.length - 1];
+      moveMark(active);
+    }
+    function schedule() { if (!pending) { pending = true; requestAnimationFrame(update); } }
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', function () { var c = current; current = null; moveMark(c); schedule(); });
+    update();
   })();
 
   // Номер и размер последней версии — из GitHub. Ссылка на архив работает и без этого.
