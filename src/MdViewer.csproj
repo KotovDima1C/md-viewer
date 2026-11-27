@@ -16,7 +16,7 @@
     <TieredPGO>true</TieredPGO>
     <SatelliteResourceLanguages>ru;en</SatelliteResourceLanguages>
     <Product>MD Viewer</Product>
-    <Version>0.7.0</Version>
+    <Version>0.7.1</Version>
     <ApplicationIcon>app.ico</ApplicationIcon>
     <!-- WebView2 тянет WPF-сборку, которая нам не нужна: конфликт версий WindowsBase безвреден -->
     <NoWarn>$(NoWarn);MSB3277</NoWarn>
