@@ -117,6 +117,20 @@
   .download:active { transform: none; }
   .download svg { flex: none; }
   .cta small { font-size: 15px; color: var(--ink-soft); }
+  /* зелёная записка «Скачано» рядом с кнопкой; появляется, когда GitHub вернул число */
+  .dl-row { display: flex; align-items: center; flex-wrap: wrap; gap: 14px 22px; }
+  .dl-count {
+    position: relative; padding: 14px 18px 10px; text-align: center; color: #1f5130;
+    background: #d9f3dd; border-radius: 3px 3px 12px 3px;
+    box-shadow: 0 12px 22px -12px rgba(20, 80, 40, .45), 0 2px 4px rgba(20, 80, 40, .08);
+    transform: rotate(-4deg); font: 600 21px/1 "Caveat", "Segoe Print", cursive;
+  }
+  .dl-count::before { /* полоска скотча */
+    content: ""; position: absolute; top: -10px; left: 50%; width: 60px; height: 20px; transform: translateX(-50%) rotate(3deg);
+    background: rgba(255, 255, 255, .6); border: 1px solid rgba(60, 120, 70, .18); border-radius: 2px;
+  }
+  .dl-count b { display: block; margin-top: 2px; font-size: 40px; font-weight: 700; }
+  .dl-count[hidden] { display: none; }
   .cta small a { color: var(--ink-soft); }
 
   /* окно с кодом 1С — главный элемент страницы */
@@ -233,10 +247,13 @@
       <h1>Markdown, в котором код 1С выглядит как в Конфигураторе</h1>
       <p class="lead">MD Viewer — лёгкий просмотрщик .md для Windows. Двойной клик по файлу — и через полсекунды документ открыт: код раскрашен, таблицы и схемы на месте.</p>
       <div class="cta">
+        <div class="dl-row">
         <a class="download js-download" href="https://github.com/KotovDima1C/md-viewer/releases/latest/download/md-viewer-win-x64.zip">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 19h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <span class="js-label">Скачать последнюю версию</span>
         </a>
+        <div class="dl-count js-count" hidden>Скачано:<b>0</b></div>
+        </div>
         <small><span class="js-meta">Для Windows 10 и 11, бесплатно</span>, с <a href="https://github.com/KotovDima1C/md-viewer">открытым кодом</a></small>
       </div>
     </div>
@@ -406,6 +423,21 @@
           var mb = Math.round(asset.size / 1048576);
           document.querySelectorAll('.js-meta').forEach(function (el) { el.textContent = 'Для Windows 10 и 11, ' + mb + ' МБ, бесплатно'; });
         }
+      })
+      .catch(function () {});
+
+    // Сколько раз скачали: сумма по всем архивам всех релизов
+    fetch('https://api.github.com/repos/KotovDima1C/md-viewer/releases?per_page=100')
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (list) {
+        if (!Array.isArray(list)) return;
+        var n = 0;
+        list.forEach(function (rel) { (rel.assets || []).forEach(function (a) { n += a.download_count || 0; }); });
+        if (!n) return;
+        document.querySelectorAll('.js-count').forEach(function (el) {
+          el.querySelector('b').textContent = n.toLocaleString('ru-RU');
+          el.hidden = false;
+        });
       })
       .catch(function () {});
   })();
