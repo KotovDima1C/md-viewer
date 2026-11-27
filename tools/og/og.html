@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <!-- Баннер для превью ссылки (Telegram, VK, соцсети): 1200×630.
      Перерисовать: tools/og/render.ps1 → docs/og.png -->
-<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@500;600&family=JetBrains+Mono:wght@400&family=Unbounded:wght@700&display=block" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@500;600&family=JetBrains+Mono:wght@400&family=Unbounded:wght@700&family=Caveat:wght@700&display=block" rel="stylesheet">
 <style>
   * { box-sizing: border-box; }
   html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
@@ -41,6 +41,20 @@
     font: 400 15px/1.62 "JetBrains Mono", Consolas, monospace; tab-size: 4; color: #000; white-space: pre;
   }
   .ln { display: block; }
+  /* записка «поддержи звездой» — как на сайте, приклеена к углу окна */
+  .sticker {
+    position: absolute; right: 40px; top: 26px; z-index: 3; padding: 16px 20px 12px;
+    color: #4a3d00; background: #fff3b5; border-radius: 3px 3px 14px 3px;
+    box-shadow: 0 16px 28px -14px rgba(60, 30, 0, .55), 0 2px 4px rgba(60, 30, 0, .12);
+    transform: rotate(4deg); text-align: center;
+    font: 700 31px/1.05 "Caveat", "Segoe Print", cursive;
+  }
+  .sticker::before {
+    content: ""; position: absolute; top: -11px; left: 50%; width: 80px; height: 24px; transform: translateX(-50%) rotate(-4deg);
+    background: rgba(255, 255, 255, .6); border: 1px solid rgba(160, 140, 60, .2); border-radius: 2px;
+  }
+  .sticker .star { color: #e0a100; }
+  .sticker .heart { font-family: "Segoe UI Emoji", sans-serif; font-size: .8em; }
   .k { color: #e00000; } .i { color: #0000ff; } .s { color: #000; } .c { color: #008000; } .m { color: #963200; }
 </style>
 </head>
@@ -51,6 +65,8 @@
     <p class="sub">Просмотрщик .md для Windows.<br>Бесплатно, с открытым кодом.</p>
   </div>
   <div class="url">kotovdima1c.github.io/md-viewer</div>
+
+  <div class="sticker">Поддержи <span class="star">★</span><br>на GitHub <span class="heart">❤️</span></div>
 
   <div class="window">
     <div class="bar"><img src="../../docs/icon.png" alt="">контроль-остатков.md — MD Viewer</div>

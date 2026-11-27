@@ -45,17 +45,21 @@ def draw(small: bool) -> Image.Image:
     img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
     l, t, r, b, fold = (150, 40, 874, 984, 230) if small else (180, 60, 844, 964, 210)
 
-    # Мягкая тень (в мелких размерах только мешает)
-    if not small:
-        sh = Image.new("RGBA", (S, S), (0, 0, 0, 0))
-        ImageDraw.Draw(sh).rounded_rectangle((l + 10, t + 26, r + 10, b + 26), 70, fill=(0, 0, 0, 70))
-        img.alpha_composite(sh.filter(ImageFilter.GaussianBlur(18)))
-
     # Лист с вырезанным углом
     m = Image.new("L", (S, S), 0)
     md = ImageDraw.Draw(m)
     md.rounded_rectangle((l, t, r, b), 70, fill=255)
     md.polygon([(r - fold, t - 5), (r + 5, t - 5), (r + 5, t + fold)], fill=0)
+
+    # Мягкая тень той же формы, что и лист: без тени над загнутым углом
+    # (в мелких размерах тень только мешает)
+    if not small:
+        sh_mask = Image.new("L", (S, S), 0)
+        sh_mask.paste(m.point(lambda v: v * 70 // 255), (10, 26))
+        sh = Image.new("RGBA", (S, S), (0, 0, 0, 255))
+        sh.putalpha(sh_mask.filter(ImageFilter.GaussianBlur(18)))
+        img.alpha_composite(sh)
+
     img.paste(Image.new("RGBA", (S, S), PAPER), (0, 0), m)
     d = ImageDraw.Draw(img)
     d.polygon([(r - fold, t), (r - fold, t + fold - 50), (r - fold + 50, t + fold), (r, t + fold)], fill=FOLD)
