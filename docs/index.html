@@ -86,6 +86,9 @@
   .sticker:hover, .sticker:focus-visible { transform: rotate(0deg) translateY(-3px); box-shadow: 0 20px 30px -14px rgba(90, 70, 0, .5), 0 2px 4px rgba(90, 70, 0, .08); }
   .sticker b { display: block; white-space: nowrap; font-size: 25px; font-weight: 700; margin-bottom: 4px; }
   .sticker .star { color: #e0a100; }
+  /* вся записка — ссылка, а подчёркнутое «GitHub» подсказывает, куда она ведёт */
+  .sticker .gh { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+  .sticker:hover .gh { text-decoration-thickness: 2.5px; }
   .sticker .heart { font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif; font-size: .85em; }
   .sticker .go { display: block; margin-top: 6px; font-size: 23px; font-weight: 700; }
 
@@ -232,7 +235,7 @@
     <div class="shot-zone">
     <a class="sticker" href="https://github.com/KotovDima1C/md-viewer">
       <b>Понравился проект?</b>
-      Поставь, пожалуйста, <span class="star">★</span> на GitHub
+      Поставь, пожалуйста, <span class="star">★</span> на <span class="gh">GitHub</span>
       <span class="go">Спасибо! <span class="heart">❤️</span></span>
     </a>
     <div class="window" role="img" aria-label="Окно MD Viewer: код 1С раскрашен в цвета Конфигуратора">
