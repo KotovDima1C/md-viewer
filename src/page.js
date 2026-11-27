@@ -240,6 +240,43 @@
     });
   }
 
+  // ---------- Копирование: у каждого блока кода и весь документ ----------
+  // Буфер обмена заполняет окно программы — так надёжнее, чем разрешения буфера в браузере.
+  var COPY_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+    '<rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/>' +
+    '<path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="2"/></svg>';
+  var flashCopied = function (btn) {
+    var label = btn.querySelector('span');
+    if (!label) return;
+    if (!btn.dataset.label) btn.dataset.label = label.textContent;
+    label.textContent = 'Скопировано';
+    btn.classList.add('copied');
+    clearTimeout(btn._t);
+    btn._t = setTimeout(function () { label.textContent = btn.dataset.label; btn.classList.remove('copied'); }, 1400);
+  };
+  document.querySelectorAll('.markdown-body pre > code').forEach(function (code) {
+    var pre = code.parentNode;
+    var box = document.createElement('div');
+    box.className = 'code-box';
+    pre.parentNode.insertBefore(box, pre);
+    box.appendChild(pre);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-code';
+    btn.title = 'Скопировать код';
+    btn.innerHTML = COPY_ICON + '<span>Копировать</span>';
+    btn.addEventListener('click', function () {
+      try { chrome.webview.postMessage('copy:' + code.textContent.replace(/\n$/, '')); } catch (e) { }
+      flashCopied(btn);
+    });
+    box.appendChild(btn);
+  });
+  var copyDoc = document.querySelector('.copy-doc');
+  if (copyDoc) copyDoc.addEventListener('click', function () {
+    try { chrome.webview.postMessage('copy-doc'); } catch (e) { }
+    flashCopied(copyDoc);
+  });
+
   // ---------- Широкие таблицы ----------
   // Каждая таблица — в обёртке с прокруткой; содержимое ячеек — в .cell с потолком ширины
   // (у таблиц max-width на самих ячейках не работает). Если таблице с такими колонками тесно
@@ -289,7 +326,7 @@
   var checkOverlap = function () {
     overlapPending = false;
     var boxes = document.querySelectorAll('.mermaid-box:not(.mermaid-error), .table-wrap.table-wide');
-    [document.querySelector('.theme-toggle'), document.querySelector('.toc')].forEach(function (f) {
+    [document.querySelector('.theme-toggle'), document.querySelector('.copy-doc'), document.querySelector('.toc')].forEach(function (f) {
       if (!f) return;
       var r = f.getBoundingClientRect(), over = false;
       for (var i = 0; i < boxes.length && !over; i++) {

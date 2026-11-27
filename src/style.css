@@ -182,6 +182,26 @@ details summary { cursor: pointer; }
 /* поверх широкой схемы — почти прозрачные, чтобы не закрывать её */
 .theme-toggle.over-diagram { opacity: .25; }
 .theme-toggle.over-diagram:hover, .theme-toggle.over-diagram:focus-within { opacity: 1; }
+
+/* Копирование: общая кнопка под переключателем темы, у блоков кода — справа вверху при наведении */
+.copy-doc, .copy-code {
+  display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px;
+  border-radius: 13px; border: 1px solid var(--border); background: var(--soft); color: var(--muted);
+  font: 500 12px/1 "Segoe UI", sans-serif; cursor: pointer;
+}
+.copy-doc:hover, .copy-code:hover { color: var(--fg); }
+.copy-doc.copied, .copy-code.copied { color: #16a34a; border-color: color-mix(in srgb, #16a34a 50%, var(--border)); }
+.copy-doc {
+  position: fixed; top: 64px; right: max(18px, calc(50% - 430px - 124px)); z-index: 10;
+  width: 96px; justify-content: center; opacity: .55; transition: opacity .2s ease;
+}
+.copy-doc:hover, .copy-doc:focus-visible, .copy-doc.copied { opacity: 1; }
+.copy-doc.over-diagram { opacity: .25; }
+.copy-doc.over-diagram:hover { opacity: 1; }
+.code-box { position: relative; }
+.code-box > pre { margin-bottom: 16px; }
+.copy-code { position: absolute; top: 8px; right: 8px; opacity: 0; transition: opacity .15s ease; }
+.code-box:hover .copy-code, .copy-code:focus-visible, .copy-code.copied { opacity: 1; }
 .theme-toggle::after {
   content: ""; position: absolute; top: 50%; left: 4px; pointer-events: none;
   width: 24px; height: 24px; border-radius: 50%;
@@ -249,7 +269,7 @@ details summary { cursor: pointer; }
 h1, h2, h3 { scroll-margin-top: 16px; }
 
 @media print {
-  .toc, .mmd-tools { display: none; }
+  .toc, .mmd-tools, .copy-doc, .copy-code { display: none; }
   .mermaid-box { width: auto; left: 0; transform: none; }
   .table-wrap.table-wide { width: auto; left: 0; transform: none; }
   .table-wrap { overflow: visible; }

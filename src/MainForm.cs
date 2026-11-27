@@ -153,6 +153,8 @@ sealed class MainForm : Form
             {
                 var msg = e.TryGetWebMessageAsString();
                 if (msg.StartsWith("error:", StringComparison.Ordinal)) LogError(currentFile, msg[6..]);
+                else if (msg == "copy-doc") CopyDocument();
+                else if (msg.StartsWith("copy:", StringComparison.Ordinal)) CopyText(msg[5..]);
                 else SetTheme(msg);
             }
             catch { }
@@ -228,7 +230,15 @@ sealed class MainForm : Form
         "<div class=\"theme-toggle\" role=\"group\" aria-label=\"Тема\">" +
         "<button type=\"button\" data-mode=\"dark\" title=\"Тёмная тема\">🌙</button>" +
         "<button type=\"button\" data-mode=\"light\" title=\"Светлая тема\">☀️</button>" +
-        "<button type=\"button\" data-mode=\"system\" title=\"Как в Windows\">⚙️</button></div>";
+        "<button type=\"button\" data-mode=\"system\" title=\"Как в Windows\">⚙️</button></div>" +
+        // Под переключателем темы — копирование всего документа (исходный Markdown)
+        "<button type=\"button\" class=\"copy-doc\" title=\"Скопировать весь документ в Markdown\">" + CopyIcon +
+        "<span>Копировать</span></button>";
+
+    const string CopyIcon =
+        "<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\">" +
+        "<rect x=\"8\" y=\"8\" width=\"12\" height=\"12\" rx=\"2\" stroke=\"currentColor\" stroke-width=\"2\"/>" +
+        "<path d=\"M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2\" stroke=\"currentColor\" stroke-width=\"2\"/></svg>";
 
     // Скрипт страницы (тема + оглавление) — встроенный ресурс page.js
     static readonly Lazy<string> ThemeScriptLazy = new(() => Resource("page.js"));
@@ -402,6 +412,26 @@ sealed class MainForm : Form
     };
 
     static string Title(string path) => Path.GetFileName(path) + " — MD Viewer";
+
+    // ---------- копирование всего документа ----------
+
+    // Исходный текст .md — в буфер обмена (из страницы его не достать: там уже HTML)
+    void CopyDocument()
+    {
+        try
+        {
+            var text = Encoding.UTF8.GetString(ReadShared(currentFile));
+            if (text.Length > 0 && text[0] == '﻿') text = text[1..];
+            Clipboard.SetText(text.Length > 0 ? text : " ");
+        }
+        catch (Exception ex) { LogError(currentFile, "copy-doc: " + ex.Message); }
+    }
+
+    void CopyText(string text)
+    {
+        try { Clipboard.SetText(text.Length > 0 ? text : " "); }
+        catch (Exception ex) { LogError(currentFile, "copy: " + ex.Message); }
+    }
 
     // ---------- журнал ошибок страницы ----------
 
