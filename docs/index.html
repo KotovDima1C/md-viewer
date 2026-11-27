@@ -33,6 +33,7 @@
   }
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
+  body { overflow-x: clip; } /* повёрнутая записка у края окна не должна давать горизонтальную прокрутку */
   body {
     margin: 0; color: var(--ink); background: var(--paper);
     font: 400 18px/1.6 "Golos Text", "Segoe UI", system-ui, sans-serif;
@@ -85,8 +86,8 @@
   .sticker:hover, .sticker:focus-visible { transform: rotate(0deg) translateY(-3px); box-shadow: 0 20px 30px -14px rgba(90, 70, 0, .5), 0 2px 4px rgba(90, 70, 0, .08); }
   .sticker b { display: block; font-size: 25px; font-weight: 700; margin-bottom: 4px; }
   .sticker .star { color: #e0a100; }
-  .sticker .heart { color: var(--berry-a); }
-  .sticker .go { display: block; margin-top: 6px; font-size: 20px; text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
+  .sticker .heart { font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif; font-size: .85em; }
+  .sticker .go { display: block; margin-top: 6px; font-size: 23px; font-weight: 700; }
 
   /* ---------- первый экран ---------- */
   .hero { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 7fr); gap: 56px; align-items: center; padding-block: 72px 88px; }
@@ -230,9 +231,9 @@
 
     <div class="shot-zone">
     <a class="sticker" href="https://github.com/KotovDima1C/md-viewer">
-      <b>Пишете код?</b>
-      Поставьте проекту <span class="star">★</span> на GitHub — так его найдут другие 1С-ники.
-      <span class="go">Поставить звезду <span class="heart">♥</span></span>
+      <b>Понравился проект?</b>
+      Поставь, пожалуйста, <span class="star">★</span> на GitHub. Для меня это правда важно, и так проект найдут другие.
+      <span class="go">Спасибо! <span class="heart">❤️</span></span>
     </a>
     <div class="window" role="img" aria-label="Окно MD Viewer: код 1С раскрашен в цвета Конфигуратора">
       <div class="window-bar"><img src="icon.png" alt="">контроль-остатков.md — MD Viewer</div>
